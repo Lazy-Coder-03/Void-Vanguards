@@ -1,18 +1,20 @@
-function drawExpBar() {
+function drawUI() {
+    // Reset transformations to screen coordinates
+    resetMatrix();
+
+    // Draw EXP bar
     fill(255);
     rect(10, 10, 200, 10);
     fill(0, 255, 0);
     rect(10, 10, map(currentExp, 0, expNeeded, 0, 200), 10);
-}
 
-function drawHealthBar() {
+    // Draw health bar
     fill(255);
     rect(10, 30, 200, 10);
     fill(255, 0, 0);
     rect(10, 30, map(player.health, 0, Drone.MAX_HEALTH, 0, 200), 10);
-}
 
-function drawStats() {
+    // Draw stats
     fill(255);
     textSize(12);
     textAlign(LEFT);
@@ -22,6 +24,7 @@ function drawStats() {
     text(`DMG: ${player.damage}`, 10, 120);
     text(`FR: ${player.bps}`, 10, 140);
 }
+
 
 function drawUpgradeMenu() {
     background(0, 150);
@@ -49,7 +52,7 @@ function drawUpgradeMenu() {
             textSize(20);
             textAlign(CENTER);
             text("Damage Upgraded!", width / 2, height / 2 + 100);
-            player.damage += Math.round((10 + 0.025 * player.damage) / 10) * 10;
+            player.damage += Math.round((10 + 0.025 * player.damage));
             console.log(player.damage);
             gamePaused = false;
             upgradeOption = null;  // Reset upgrade option after applying
@@ -96,5 +99,26 @@ class graphicsButton {
 
     isButtonClicked() {
         return this.hover && mouseIsPressed;
+    }
+}
+
+function drawCritEffects() {
+    for (let i = critEffects.length - 1; i >= 0; i--) {
+        let effect = critEffects[i];
+
+        push();
+        textSize(effect.size);
+        textAlign(CENTER, CENTER);
+        fill(255, 255, 0, map(effect.lifespan, 0, 60, 0, 255)); // Fade out over time
+        text(effect.emoji, effect.x, effect.y);
+        textSize(effect.size / 3); // Smaller text for "CRIT!"
+        fill(255, map(effect.lifespan, 0, 60, 0, 255));
+        text(effect.text, effect.x, effect.y - 50);
+        pop();
+
+        effect.lifespan--;
+        if (effect.lifespan <= 0) {
+            critEffects.splice(i, 1); // Remove the effect when its lifespan ends
+        }
     }
 }

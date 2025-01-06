@@ -1,8 +1,10 @@
 class Bullet {
     constructor(x, y, angle, damage) {
         this.position = createVector(x, y);
+        this.initialPosition = createVector(x, y);  // Store the initial position of the bullet
         this.velocity = p5.Vector.fromAngle(angle).mult(10);
         this.damage = damage;
+        this.isOffScreenDist=600;
     }
 
     update() {
@@ -24,11 +26,10 @@ class Bullet {
         pop();
     }
 
+    // Check if the bullet has traveled a certain distance
     isOffScreen() {
-        return (
-            this.position.x < 0 || this.position.x > width ||
-            this.position.y < 0 || this.position.y > height
-        );
+        let distanceTraveled = this.position.dist(this.initialPosition);
+        return distanceTraveled > this.isOffScreenDist;  // Remove bullet after it travels 200px
     }
 
     hits(enemy) {

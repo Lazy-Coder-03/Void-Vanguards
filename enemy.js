@@ -39,11 +39,13 @@ class Enemy {
     }
 
     show() {
+        let r = this.health / Enemy.MAX_HEALTH;
+        let dr = min(Enemy.MAX_HEALTH/2,100)
         push();
         translate(this.position.x, this.position.y);
         fill(255, 50, 78);
         noStroke();
-        ellipse(0, 0, 20, 20);
+        ellipse(0, 0, dr*r, dr*r);
         textSize(10);
         fill(255);
         textAlign(CENTER, CENTER);

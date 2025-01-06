@@ -26,21 +26,20 @@ function keyIsDownHandler() {
 
 
 function spawnEnemies() {
-    let r = random(1);
-    let x, y;
-    if (r < 0.25) {
-        x = random(width, width + 50);
-        y = random(height);
-    } else if (r >= 0.25 && r < 0.5) {
-        x = random(-50, 0);
-        y = random(height);
-    } else if (r >= 0.5 && r < 0.75) {
-        x = random(width);
-        y = random(height, height + 50);
-    } else {
-        x = random(width);
-        y = random(-50, 0);
+    // Random angle to determine spawn direction
+    if (enemies.length > 10){
+        return
     }
+    let angle = random(TWO_PI);
+
+    // Random distance to spawn outside the screen area, but around the player
+    let radius = random(width / 2, width / 2 + 100);  // Distance from the player to spawn
+
+    // Calculate spawn position relative to player position
+    let x = cos(angle) * radius + player.position.x;
+    let y = sin(angle) * radius + player.position.y;
+
+    // Create and add the enemy at the calculated position
     enemies.push(new Enemy(x, y));
 }
 
@@ -48,9 +47,26 @@ function checkCollisions() {
     for (let i = bullets.length - 1; i >= 0; i--) {
         for (let j = enemies.length - 1; j >= 0; j--) {
             if (bullets[i].hits(enemies[j])) {
-                enemies[j].takeDamage(bullets[i].damage);
-                bullets.splice(i, 1);  // Destroy the bullet
-                break;  // Exit the inner loop as the bullet is destroyed
+                if (random(1) < critChance) {
+                    enemies[j].takeDamage(bullets[i].damage * critDamage);
+
+                    // Add crit effect to the array
+                    critEffects.push({
+                        x: bullets[i].position.x,
+                        y: bullets[i].position.y,
+                        text: "CRIT!",
+                        emoji: "💥",
+                        size: 60,
+                        lifespan: 60 // Frames to linger
+                    });
+
+                    bullets.splice(i, 1);  // Destroy the bullet
+                    break;  // Exit the inner loop as the bullet is destroyed
+                } else {
+                    enemies[j].takeDamage(bullets[i].damage);
+                    bullets.splice(i, 1);  // Destroy the bullet
+                    break;  // Exit the inner loop as the bullet is destroyed
+                }
             }
         }
     }

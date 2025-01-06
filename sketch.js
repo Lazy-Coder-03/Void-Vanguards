@@ -10,16 +10,29 @@ let gamePaused = false;
 let upgrades = [];
 let upgradeOption = null;
 let spawnInterval = 120;
-
+let healthDropChance = 0.1;
+let cameraPosition;  // Camera position
+let dampeningFactor = 0.1;  // Adjust for more or less lag
+let critChance = 0.05 //still to be implemented in upgrades menu
+let critDamage = 2 //still to be implemented in upgrades menu
+let critEffects = [];
 function setup() {
-  createCanvas(800,600);
+  createCanvas(800, 600);
   player = new Drone(400, 300);  // Example player position
-  frameRate(60)
+  cameraPosition = createVector(0, 0);
+  frameRate(60);
 }
 
 function draw() {
   if (!gamePaused) {
     background(0);
+
+    // Smoothly move the camera towards the player's position
+    let targetPosition = player.position.copy();
+    cameraPosition.lerp(targetPosition, dampeningFactor);  // Interpolate between current and target position
+
+    // Apply camera offset by adjusting the canvas draw position
+    translate(width / 2 - cameraPosition.x, height / 2 - cameraPosition.y);
 
     // Update and display the player
     player.update();
@@ -41,13 +54,17 @@ function draw() {
     }
 
     // Update and display enemies
+    let expAmt = Math.round((20 + (level - 1) * 2));
+
     for (let i = enemies.length - 1; i >= 0; i--) {
       enemies[i].seek(player.position);
       enemies[i].update();
       enemies[i].show();
+
       if (enemies[i].health <= 0) {
-        let exp = enemies[i].dropExp(25);
-        if (random(1) < 1) {
+        console.log(expAmt);
+        let exp = enemies[i].dropExp(expAmt);
+        if (random(1) < healthDropChance) {
           let health = enemies[i].dropHealth(10);
           healths.push(health);
         }
@@ -75,10 +92,10 @@ function draw() {
     for (let i = healths.length - 1; i >= 0; i--) {
       healths[i].update();
       healths[i].show();
-      
+
       if (healths[i].lifespan <= 0) {
         healths.splice(i, 1);
-      }else if (player.health < Drone.MAX_HEALTH && dist(player.position.x, player.position.y, healths[i].position.x, healths[i].position.y) < player.collectionRadius) {
+      } else if (player.health < Drone.MAX_HEALTH && dist(player.position.x, player.position.y, healths[i].position.x, healths[i].position.y) < player.collectionRadius) {
         healths[i].seek(player.position);
         if (dist(player.position.x, player.position.y, healths[i].position.x, healths[i].position.y) < player.getexpRadius) {
           if (player.health < Drone.MAX_HEALTH) {
@@ -87,7 +104,6 @@ function draw() {
           }
         }
       }
-
     }
 
     // Check for level up
@@ -104,26 +120,19 @@ function draw() {
           textSize(32);
           fill(255);
           textAlign(CENTER, CENTER);
-          text("Game Over", width / 2, height / 2);
+          background(0, 150);
+          text("Game Over", player.position.x, player.position.y);
           noLoop();
           console.log("Game Over");
         }
       }
     }
 
-    // Draw EXP bar
-    drawExpBar();
-
-    // Draw health bar
-    drawHealthBar();
-
-    // Draw stats
-    drawStats();
+    drawUI();
     // Update game state
     checkCollisions();
+    drawCritEffects();
   } else {
     drawUpgradeMenu();
   }
 }
-
-

@@ -14,8 +14,9 @@ class Drone {
         this.lastShotTime = 0;
         this.collectionRadius = 100
         this.getexpRadius = 20
-        this.damage = 30;
+        this.damage = 20;
         this.health = 30;
+        this.perceptionRadius = 400;
     }
 
     update() {
@@ -23,9 +24,11 @@ class Drone {
         if (this.health <= 0) {
             this.health = 0;
         }
-        if (millis() - this.lastShotTime > 1000 / this.bps) {
-            this.shootBullet();
-            this.lastShotTime = millis();
+        if (this.velocity.mag() < 0.3) {
+            if (millis() - this.lastShotTime > 1000 / this.bps) {
+                this.shootBullet();
+                this.lastShotTime = millis();
+            }
         }
 
         // Apply friction if no acceleration
@@ -64,7 +67,7 @@ class Drone {
         let closestDist = Infinity;
         for (let enemy of enemies) {
             let d = this.position.dist(enemy.position);
-            if (d < closestDist) {
+            if (d < this.perceptionRadius && d < closestDist) {
                 closestDist = d;
                 closest = enemy;
             }
@@ -93,6 +96,9 @@ class Drone {
         noFill();
         stroke(128, 128, 0, 100);
         ellipse(0, 0, this.collectionRadius * 2, this.collectionRadius * 2);
+        stroke(255, 0, 0, 100);
+        ellipse(0, 0, this.perceptionRadius * 2, this.perceptionRadius * 2);
         pop();
     }
 }
+//todo: bonus speed and damage and fr if stays still for 5 sec a bar will fill up and when space is pressed it will boost the drone and the enemies shouldnt decrease in size suddenly
