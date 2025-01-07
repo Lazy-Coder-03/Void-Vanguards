@@ -33,12 +33,23 @@ class Drone {
         this.turboChargeTime = 0; // Time drone has stayed still
         this.isTurboActive = false; // Flag for turbo mode
         this.turboEndTime = 0; // When turbo mode ends
+        this.turboChargeRate = 0;
+        this.passiveActive = false;
     }
 
     update() {
         keyIsDownHandler();
         this.stats.health = constrain(this.stats.health, 0, Drone.MAX_HEALTH);
-
+        if (enemies.length > 5) {
+            this.turboChargeRate = deltaTime * Math.round(enemies.length/2);
+        } else {
+            this.turboChargeRate = deltaTime;
+        }
+        if (this.turboChargeRate > deltaTime) {
+            this.passiveActive = true;
+        } else {
+            this.passiveActive = false;
+        }
         if (this.velocity.mag() < this.minSpeedRequired && millis() - this.lastShotTime > 1000 / this.stats.bps) {
             this.shootBullet();
             this.lastShotTime = millis();
@@ -50,7 +61,8 @@ class Drone {
 
         // Handle idle tracking and cap turbo charge bar
         if (this.velocity.mag() < this.minSpeedRequired && !this.isTurboActive) {
-            this.turboChargeTime += deltaTime;
+            //this.turboChargeTime += deltaTime;
+            this.turboChargeTime += this.turboChargeRate; // Increase turbo charge rate based on number of enemies
             this.turboChargeTime = constrain(this.turboChargeTime, 0, this.baseStats.turboChargeMaxTime);
         } else {
             this.turboChargeTime -= deltaTime * 3; // Reset if the drone moves
@@ -112,7 +124,9 @@ class Drone {
     }
 
     shootBullet() {
-        playLaserSounds()
+        if (soundOn) {
+            playLaserSounds()
+        }
         bullets.push(new Bullet(this.position.x, this.position.y, this.rotation, this.stats.damage));
     }
 
@@ -181,7 +195,10 @@ class Drone {
         this.isTurboActive = true;
         turboSound.setVolume(0.3);
         // turboSound.rate(random(0.8, 1.2));
-        turboSound.play();
+        if (!turboSound.isPlaying()) {
+            turboSound.play(); 
+        }
+
         this.turboEndTime = millis() + this.baseStats.turboDuration; // Use turboDuration from stats
         addEffect(
             this.position.x,
@@ -220,6 +237,9 @@ class Drone {
         if (this.turboChargeTime >= this.baseStats.turboChargeMaxTime) {
             drawingContext.shadowColor = color(0, 255, 255); // Cyan glow
             drawingContext.shadowBlur = 15;  // Adjust the intensity of the glow
+        } else if (this.passiveActive) {
+            drawingContext.shadowColor = color(0, 255, 0); // Green glow
+            drawingContext.shadowBlur = 15;  // Adjust the intensity of the glow
         } else {
             drawingContext.shadowColor = color(0, 0, 0, 0);  // No glow if not full
             drawingContext.shadowBlur = 0;  // No glow
@@ -240,8 +260,12 @@ class Drone {
 
     addBaseStat(stat, value) {
         if (this.baseStats.hasOwnProperty(stat)) {
+            // Update the base stats permanently
             this.baseStats[stat] += value;
-            this.stats[stat] += value; // Ensure current stats also increase
+
+            // Update the current stats, ensuring they increase
+            this.stats[stat] += value;
+
         } else {
             console.warn(`Stat '${stat}' does not exist.`);
         }

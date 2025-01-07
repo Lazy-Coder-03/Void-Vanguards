@@ -1,6 +1,6 @@
-# Void Hunters
+# Void Vanguards
 
-Void Hunters is a fast-paced roguelike space shooter where you must defeat enemies, collect upgrades, and survive as long as possible. The game features a variety of upgrades to enhance your abilities and increase your score.
+Void Vanguards is a fast-paced roguelike space shooter where you must defeat enemies, collect upgrades, and survive as long as possible. The game features a variety of upgrades to enhance your abilities and increase your score.
 
 ## Features
 

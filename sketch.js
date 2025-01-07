@@ -25,10 +25,14 @@ let pauseButton;
 let restartButton;
 let backToStartMenuButton;
 let laserSounds = [];
+let Xship
+let soundOn = true;
+let toggleSoundButton;
+let allowedNumofUpgrades = 2;
 
 function preload() {
   backgroundSound = loadSound('sounds/Background.mp3');
-  turboSound = loadSound('sounds/booster.mp3');
+  turboSound = loadSound('sounds/powerup.mp3');
   explosionSound = loadSound('sounds/ship_destroy.mp3');
   critSound = loadSound('sounds/crit.mp3');
   fireSound = loadSound('sounds/laser_sound.mp3');
@@ -50,7 +54,9 @@ function preload() {
 function playSound(sound) {
   sound.setVolume(0.05);
   sound.rate(random(0.8, 1.2));
-  sound.play();
+  if (soundOn && !sound.isPlaying()) {
+    sound.play();
+  }
 }
 
 function playLaserSounds() {
@@ -65,16 +71,18 @@ function playLaserSounds() {
 function setup() {
   createCanvas(800, 600);
   player = new Drone(400, 300);  // Example player position
+  Xship = new Plane(width/2, height/2)
   cameraPosition = createVector(0, 0);
   frameRate(60);
-  backgroundSound.loop();
+  toggleSoundButton = new graphicsButton(soundOn ? "Sound: ON" : "Sound: OFF", [255, 255, 0], width / 2, height / 2 + 200, 40);
   backgroundSound.setVolume(0.1);  // Adjust volume
+  backgroundSound.loop();  // Loop the background sound
 }
 
 
 function draw() {
   background(0);
-  backgroundSound.setVolume(0.1);
+
 
   if (!gameStarted) {
     drawStartMenu();
@@ -82,6 +90,7 @@ function draw() {
     switch (gameState) {
       case 'startMenu':
         drawStartMenu();
+
         break;
       case 'playing':
         // Main game logic (everything happens here while playing)
@@ -109,7 +118,7 @@ function draw() {
         }
 
         // Update and display enemies
-        let expAmt = Math.round((20 + (level - 1) * 2));
+        let expAmt = getExpAmount();
 
         for (let i = enemies.length - 1; i >= 0; i--) {
           enemies[i].seek(player.position);
@@ -140,7 +149,8 @@ function draw() {
               currentExp += exps[i].value;
               score += exps[i].value;
               exps.splice(i, 1);
-              playSound(expSound);
+              expSound.setVolume(0.1);
+              expSound.play();
             }
           }
         }
@@ -158,7 +168,7 @@ function draw() {
               if (player.stats.health < Drone.MAX_HEALTH) {
                 player.stats.health += healths[i].value;
                 healSound.setVolume(0.1);
-                playSound(healSound);
+                healSound.play();
                 healths.splice(i, 1);
               }
             }
@@ -196,7 +206,7 @@ function draw() {
         }
 
         drawUI();
-        pauseButton = new graphicsButton("Pause", [255, 0, 0], width-50, 50, 30);
+        pauseButton = new graphicsButton("Pause", [255, 0, 0], width-60, 50, 30);
         // Update game state
         checkCollisions();
         updateEffects();
@@ -243,7 +253,9 @@ function draw() {
     resetGame();  // Reset the game when the button is clicked
   }
 }
-
+function getExpAmount() {
+  return Math.round(20 + (level - 1) * 1.01);
+}
 // Function to show paused state and controls
 function drawPausedState() {
   fill(255);
@@ -251,39 +263,62 @@ function drawPausedState() {
   textSize(32);
   background(0, 150);  // Semi-transparent background for the pause menu
   text("Game Paused", width / 2, height / 2 - 150);
-  resumeButton = new graphicsButton("Resume", [0, 255, 0], width/2-200, height/2+150, 40);
+
+  resumeButton = new graphicsButton("Resume", [0, 255, 0], width / 2 - 200, height / 2 + 150, 40);
   resumeButton.show();
   restartButton = new graphicsButton("Restart", [128, 50, 50], width / 2 + 200, height / 2 + 150, 40);
   restartButton.show();
   backToStartMenuButton = new graphicsButton("Back to Start Menu", [255, 255, 0], width / 2, height / 2 + 150, 40);
   backToStartMenuButton.show();
 
-  // Handle Resume button click to unpause
+  // Update text for the toggle sound button
+  toggleSoundButton.text = soundOn ? "Sound: ON" : "Sound: OFF";
+  toggleSoundButton.x = width / 2
+  toggleSoundButton.y= height / 2 + 200
+  toggleSoundButton.show();
+
+  // Handle button clicks
   if (resumeButton.isButtonClicked()) {
     gameState = 'playing';
     loop();  // Restart the game loop
   }
+
   if (restartButton.isButtonClicked()) {
     gameState = 'playing';
     resetGame();
   }
+
   if (backToStartMenuButton.isButtonClicked()) {
     gameState = 'startMenu';  // Set a specific state for the start menu
     resetGame();
     gameStarted = false;
   }
+
+  // Toggle sound on/off when the toggle button is clicked
+  if (toggleSoundButton.isButtonClicked()) {
+    soundOn = !soundOn;
+    if (soundOn) {
+      backgroundSound.setVolume(0.1);  // Restore sound volume
+      backgroundSound.loop();
+    } else {
+      backgroundSound.setVolume(0);  // Mute the background sound
+      backgroundSound.stop();
+    }
+  }
+
   // Display controls
   textSize(18);
   textAlign(CENTER, CENTER);
-  text("Controls:", width / 2, height / 2-120);
+  text("Controls:", width / 2, height / 2 - 120);
   text("W / Arrow Up - Move Up", width / 2, height / 2 - 90);
-  text("S / Arrow Down - Move Down", width / 2, height / 2-60 );
-  text("A / Arrow Left - Move Left", width / 2, height / 2 -30);
+  text("S / Arrow Down - Move Down", width / 2, height / 2 - 60);
+  text("A / Arrow Left - Move Left", width / 2, height / 2 - 30);
   text("D / Arrow Right - Move Right", width / 2, height / 2);
   text("Space - Activate Turbo", width / 2, height / 2 + 30);
   text("P / ESC - Pause/Unpause", width / 2, height / 2 + 60);
   text("Click 'Resume' button to resume", width / 2, height / 2 + 90);
 }
+
 
 
 // Function to reset the game
@@ -303,6 +338,7 @@ function resetGame() {
   Drone.MAX_HEALTH = 40;
   spawnInterval = 120;
   Enemy.MAX_HEALTH = 50;
+  allowedNumofUpgrades = 3;
   loop();  // Restart the game loop
 }
 function addEffect(x, y, emoji, text = "", size = 40, color = [255, 255, 0], lifespan = 60) {

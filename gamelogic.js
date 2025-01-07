@@ -1,13 +1,32 @@
 function levelUp() {
     currentExp -= expNeeded;
-    expNeeded += 20 * level;
+    expNeeded += Math.round(20 * level * 0.5);
     level++;
     gamePaused = true; // Pause the game
     gameState = 'levelUp'; 
-    Enemy.MAX_HEALTH += Math.round((20 + Enemy.MAX_HEALTH * 0.075) / 10) * 10;
+    if (level % 10 === 0) {
+        allowedNumofUpgrades++;
+        enemyLevelUp();
+    }
+
+    if (random(1) < enemyLevelUpChance * (level-1) * 2) {
+        enemyLevelUp();
+    }
     if (spawnInterval >= 60) {
         spawnInterval -= 2;
     }
+}
+function enemyLevelUp() {
+    Enemy.MAX_HEALTH += Math.round((20 + Enemy.MAX_HEALTH * 0.1) / 10) * 10;
+    addEffect(
+        player.position.x,
+        player.position.y,
+        "⚠️",    // Emoji
+        "ENEMIES LEVELED UP!", // Text
+        60,      // Size
+        [255, 255, 0], // Color
+        60 * 5     // Lifespan in frames
+    );
 }
 
 function keyPressed() {
@@ -36,7 +55,7 @@ function keyIsDownHandler() {
 
 function spawnEnemies() {
     // Random angle to determine spawn direction
-    if (enemies.length > 10){
+    if (enemies.length > 20){
         return
     }
     let angle = random(TWO_PI);
@@ -49,16 +68,7 @@ function spawnEnemies() {
     let y = sin(angle) * radius + player.position.y;
     // Create and add the enemy at the calculated position
     if (random(1) < enemyLevelUpChance) {
-        addEffect(
-            player.position.x,
-            player.position.y,
-            "⚠️",    // Emoji
-            "ENEMIES LEVELED UP!", // Text
-            60,      // Size
-            [255, 255, 0], // Color
-            60*5     // Lifespan in frames
-        );
-        Enemy.MAX_HEALTH += Math.round((20 + Enemy.MAX_HEALTH * 0.075) / 10) * 10;
+        enemyLevelUp();
     }
     enemies.push(new Enemy(x, y));
 }
