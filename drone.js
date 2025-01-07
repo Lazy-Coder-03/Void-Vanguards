@@ -9,7 +9,7 @@ class Drone {
         critChance: 0.05,
         critDamage: 2,
         collectionRadius: 100, // Radius for collecting EXP orbs
-        turboChargeMaxTime: 1000, // Max time for filling the turbo charge bar
+        turboChargeMaxTime: 10000, // Max time for filling the turbo charge bar
         turboDuration: 5000 // How long turbo lasts (as a stat)
     };
     static MAX_HEALTH = 40;
@@ -28,7 +28,7 @@ class Drone {
         this.lastShotTime = 0;
         this.getexpRadius = 20;
         this.perceptionRadius = 400;
-
+        this.minSpeedRequired = 0.3;
         // Turbo Charge
         this.turboChargeTime = 0; // Time drone has stayed still
         this.isTurboActive = false; // Flag for turbo mode
@@ -39,7 +39,7 @@ class Drone {
         keyIsDownHandler();
         this.stats.health = constrain(this.stats.health, 0, Drone.MAX_HEALTH);
 
-        if (this.velocity.mag() < 0.3 && millis() - this.lastShotTime > 1000 / this.stats.bps) {
+        if (this.velocity.mag() < this.minSpeedRequired && millis() - this.lastShotTime > 1000 / this.stats.bps) {
             this.shootBullet();
             this.lastShotTime = millis();
         }
@@ -49,7 +49,7 @@ class Drone {
         }
 
         // Handle idle tracking and cap turbo charge bar
-        if (this.velocity.mag() < 0.2 && !this.isTurboActive) {
+        if (this.velocity.mag() < this.minSpeedRequired && !this.isTurboActive) {
             this.turboChargeTime += deltaTime;
             this.turboChargeTime = constrain(this.turboChargeTime, 0, this.baseStats.turboChargeMaxTime);
         } else {
@@ -168,10 +168,10 @@ class Drone {
 
             if (i < fullHearts) {
                 fill(255, 0, 0);  // Filled heart (red)
-                text("❤️", (i - (totalHearts / 2)+1) * (s+2), -20);  // Center the hearts
+                text("❤️", (i - (totalHearts / 2) + 1) * (s + 2), -20);  // Center the hearts
             } else {
                 fill(150);  // Empty heart (gray)
-                text("🖤", (i - (totalHearts / 2)+1) * (s+2), -20);  // Center the empty hearts
+                text("🖤", (i - (totalHearts / 2) + 1) * (s + 2), -20);  // Center the empty hearts
             }
         }
         pop();
@@ -185,7 +185,7 @@ class Drone {
         this.turboEndTime = millis() + this.baseStats.turboDuration; // Use turboDuration from stats
         addEffect(
             this.position.x,
-            this.position.y-80,
+            this.position.y - 80,
             "🚀",    // Emoji
             "TURBO ACTIVATED!", // Text
             60,      // Size

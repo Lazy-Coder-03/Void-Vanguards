@@ -28,7 +28,6 @@ class Enemy {
     applyForce(force) {
         this.acceleration.add(force.limit(this.maxForce));
     }
-
     seek(target) {
         let desired = p5.Vector.sub(target, this.position).setMag(this.maxSpeed);
         this.applyForce(p5.Vector.sub(desired, this.velocity).limit(this.maxForce));

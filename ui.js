@@ -74,8 +74,8 @@ function drawUpgradeMenu() {
         { text: "+Speed", color: [255, 204, 153], action: () => player.stats.speed += 0.2 },
         { text: "+HP", color: [204, 255, 255], action: () => { Drone.MAX_HEALTH += 10; player.stats.health += 10; } },
         { text: "+Collection Radius", color: [216, 191, 216], action: () => player.stats.collectionRadius += 10 },
-        { text: "+Turbo Duration", color: [255, 182, 193], action: () => player.baseStats.turboDuration += 500 },
-        { text: "-Turbo Charge Time", color: [204, 204, 255], action: () => player.baseStats.turboChargeMaxTime -= 100 }
+        { text: "+Turbo Duration", color: [255, 182, 193], action: () => player.baseStats.turboDuration += 100 },
+        { text: "-Turbo Charge Time", color: [204, 204, 255], action: () => player.baseStats.turboChargeMaxTime -= 200 }
     ];
 
     // Shuffle and select 2 random options
@@ -108,6 +108,15 @@ function drawUpgradeMenu() {
             if (random(1) < bonusUpgradeChance) {
                 selectedUpgrade.action(); // Apply bonus upgrade
                 console.log("Bonus upgrade applied!");
+                addEffect(
+                    player.position.x,
+                    player.position.y,
+                    "🌟",    // Emoji
+                    "2X BONUS UPGRADED", // Text
+                    60,      // Size
+                    [255, 255, 0], // Color
+                    240      // Lifespan in frames
+                );
             }
 
             console.log(`${upgradeOption} applied!`);
@@ -181,6 +190,8 @@ class graphicsButton {
         if (this.hover && mouseIsPressed && !this.triggered) {
             this.triggered = true;  // Mark the button as triggered
             console.log(`Button clicked: ${this.text}`);
+            buttonSound.setVolume(0.3);
+            buttonSound.play();
             return true;
         }
 

@@ -10,6 +10,14 @@ function levelUp() {
     }
 }
 
+function keyPressed() {
+    if ((key === 'P' || key === 'p' || keyCode === ESCAPE) && (gameState === 'playing')) {
+        gameState = 'paused';
+    } else if ((key === 'P' || key === 'p' || keyCode === ESCAPE) && (gameState === 'paused')) {
+        gameState = 'playing';
+    }
+}
+
 function keyIsDownHandler() {
     if (keyIsDown(LEFT_ARROW) || keyIsDown(65)) {
         player.applyForce(-1, 0);

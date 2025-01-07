@@ -12,7 +12,7 @@ let upgrades = [];
 let upgradeOption = null;
 let bonusUpgradeChance = 0.05;
 let spawnInterval = 120;
-let healthDropChance = 1;
+let healthDropChance = 0.1;
 let cameraPosition;  // Camera position
 let dampeningFactor = 0.1;  // Adjust for more or less lag
 let effects = [];
@@ -21,6 +21,9 @@ let enemyLevelUpChance = 0.01;
 let tryAgainBtn;
 let gameState = 'playing'
 let backgroundSound;
+let pauseButton;
+let restartButton;
+let backToStartMenuButton;
 let laserSounds = [];
 
 function preload() {
@@ -37,6 +40,7 @@ function preload() {
   heartIcon= loadImage('icons/heart.gif')
   hitSound = loadSound('sounds/hit2.mp3');
   hurtSound = loadSound('sounds/hurt.mp3');
+  buttonSound = loadSound('sounds/button.mp3');
   for (let i = 0; i < 10; i++) {  // Adjust the number to match how many sounds you have
     let soundFile = `sounds/laserSounds/laser_${i}.mp3`;  // Generate the file name dynamically
     laserSounds.push(loadSound(soundFile));
@@ -70,11 +74,15 @@ function setup() {
 
 function draw() {
   background(0);
-  backgroundSound.setVolume(0.1)
+  backgroundSound.setVolume(0.1);
+
   if (!gameStarted) {
     drawStartMenu();
   } else {
     switch (gameState) {
+      case 'startMenu':
+        drawStartMenu();
+        break;
       case 'playing':
         // Main game logic (everything happens here while playing)
         background(0);
@@ -188,10 +196,23 @@ function draw() {
         }
 
         drawUI();
+        pauseButton = new graphicsButton("Pause", [255, 0, 0], width-50, 50, 30);
         // Update game state
         checkCollisions();
         updateEffects();
         drawEffects(player.position.x, player.position.y);
+
+        // Pause button on top left corner
+        pauseButton.show();
+        if (pauseButton.isButtonClicked()) {
+          gameState = 'paused';
+          //noLoop();  // Stop the game loop
+        }
+        break;
+
+      case 'paused':
+        // Show the pause state with controls instructions
+        drawPausedState();
         break;
 
       case 'gameOver':
@@ -211,7 +232,7 @@ function draw() {
 
       case 'levelUp':
         drawUpgradeMenu();
-        break
+        break;
     }
   }
 
@@ -222,6 +243,48 @@ function draw() {
     resetGame();  // Reset the game when the button is clicked
   }
 }
+
+// Function to show paused state and controls
+function drawPausedState() {
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(32);
+  background(0, 150);  // Semi-transparent background for the pause menu
+  text("Game Paused", width / 2, height / 2 - 150);
+  resumeButton = new graphicsButton("Resume", [0, 255, 0], width/2-200, height/2+150, 40);
+  resumeButton.show();
+  restartButton = new graphicsButton("Restart", [128, 50, 50], width / 2 + 200, height / 2 + 150, 40);
+  restartButton.show();
+  backToStartMenuButton = new graphicsButton("Back to Start Menu", [255, 255, 0], width / 2, height / 2 + 150, 40);
+  backToStartMenuButton.show();
+
+  // Handle Resume button click to unpause
+  if (resumeButton.isButtonClicked()) {
+    gameState = 'playing';
+    loop();  // Restart the game loop
+  }
+  if (restartButton.isButtonClicked()) {
+    gameState = 'playing';
+    resetGame();
+  }
+  if (backToStartMenuButton.isButtonClicked()) {
+    gameState = 'startMenu';  // Set a specific state for the start menu
+    resetGame();
+    gameStarted = false;
+  }
+  // Display controls
+  textSize(18);
+  textAlign(CENTER, CENTER);
+  text("Controls:", width / 2, height / 2-120);
+  text("W / Arrow Up - Move Up", width / 2, height / 2 - 90);
+  text("S / Arrow Down - Move Down", width / 2, height / 2-60 );
+  text("A / Arrow Left - Move Left", width / 2, height / 2 -30);
+  text("D / Arrow Right - Move Right", width / 2, height / 2);
+  text("Space - Activate Turbo", width / 2, height / 2 + 30);
+  text("P / ESC - Pause/Unpause", width / 2, height / 2 + 60);
+  text("Click 'Resume' button to resume", width / 2, height / 2 + 90);
+}
+
 
 // Function to reset the game
 function resetGame() {
