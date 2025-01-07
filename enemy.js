@@ -8,10 +8,13 @@ class Enemy {
         this.maxForce = 0.1;
         this.maxHealth = Enemy.MAX_HEALTH;
         this.health = Enemy.MAX_HEALTH;
+        this.displayedHealth = this.health; // Smooth transition for visual size
+        this.healthBarWidth = 50; // Width of health bar
     }
 
     takeDamage(amount) {
         this.health -= amount;
+        if (this.health < 0) this.health = 0; // Prevent health from going below 0
     }
 
     dropExp(amt) {
@@ -19,7 +22,7 @@ class Enemy {
     }
 
     dropHealth(amount) {
-        return new Health(this.position.x + 20, this.position.y, amount);
+        return new Health(this.position.x + random(-20, 20), this.position.y + random(-20, 20), amount);
     }
 
     applyForce(force) {
@@ -36,32 +39,38 @@ class Enemy {
         this.velocity.limit(this.maxSpeed);
         this.position.add(this.velocity);
         this.acceleration.set(0, 0);
+
+        // Smoothly transition displayedHealth towards actual health
+        this.displayedHealth += (this.health - this.displayedHealth) * 0.1;
     }
 
     show() {
-        let r = this.health / Enemy.MAX_HEALTH;
-        let dr = min(Enemy.MAX_HEALTH/2,100)
         push();
         translate(this.position.x, this.position.y);
-        fill(255, 50, 78);
-        noStroke();
-        ellipse(0, 0, dr*r, dr*r);
-        textSize(10);
+
+        // Smooth size adjustment based on displayedHealth
+        let size = map(this.displayedHealth, 0, this.maxHealth, 20, 50);
+        textSize(size);
         fill(255);
         textAlign(CENTER, CENTER);
-        text("💥", 0, 0);
+        text("🛸", 0, 0);
         pop();
 
         // Draw health bar
         push();
         fill(255);
-        rect(this.position.x - 25, this.position.y - 20, 50, 5);
+        rect(this.position.x - this.healthBarWidth / 2, this.position.y - 30, this.healthBarWidth, 5);
         fill(0, 255, 0);
-        rect(this.position.x - 25, this.position.y - 20, map(this.health, 0, this.maxHealth, 0, 50), 5);
+        rect(
+            this.position.x - this.healthBarWidth / 2,
+            this.position.y - 30,
+            map(this.health, 0, this.maxHealth, 0, this.healthBarWidth),
+            5
+        );
         textSize(10);
         fill(255);
         textAlign(CENTER, CENTER);
-        text(`${this.health}/${this.maxHealth}`, this.position.x, this.position.y - 25);
+        text(`${Math.round(this.health)}/${this.maxHealth}`, this.position.x, this.position.y - 35);
         pop();
     }
 }
