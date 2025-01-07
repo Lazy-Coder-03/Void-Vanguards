@@ -256,7 +256,7 @@ function drawStartMenu() {
     fill(255);
     textSize(30);
     textAlign(CENTER);
-    let title = "Void Hunters";
+    let title = "Void Vanguards 🚀";
     text(title, width / 2, height / 2 - 200);
 
     // Create buttons
