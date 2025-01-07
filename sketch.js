@@ -69,8 +69,8 @@ function playLaserSounds() {
 
 
 function setup() {
-  createCanvas(800, 600);
-  player = new Drone(400, 300);  // Example player position
+  createCanvas(1500, 800);
+  player = new Drone(width / 2, height / 2);  // Example player position
   Xship = new Plane(width/2, height/2)
   cameraPosition = createVector(0, 0);
   frameRate(60);
