@@ -11,7 +11,7 @@ let gamePaused = true;
 let upgrades = [];
 let upgradeOption = null;
 let bonusUpgradeChance = 0.05;
-let spawnInterval = 120;
+let spawnInterval = 90;
 let healthDropChance = 0.1;
 let cameraPosition;  // Camera position
 let dampeningFactor = 0.1;  // Adjust for more or less lag
@@ -30,55 +30,110 @@ let soundOn = true;
 let toggleSoundButton;
 let allowedNumofUpgrades = 2;
 
+let xpOrbLifeSpan = 2700;
+let healthOrbLifeSpan = 2700;
+
+
 function preload() {
-  backgroundSound = loadSound('sounds/Background.mp3');
-  turboSound = loadSound('sounds/powerup.mp3');
-  explosionSound = loadSound('sounds/ship_destroy.mp3');
-  critSound = loadSound('sounds/crit.mp3');
-  fireSound = loadSound('sounds/laser_sound.mp3');
-  expSound = loadSound('sounds/exp_pickup.mp3');
-  gameOverSound = loadSound('sounds/game_over.mp3');
-  healSound = loadSound('sounds/heal.mp3');
   spaceShipIcon = loadImage('icons/spaceship_better.png');
   orbIcon = loadImage('icons/E7BE.gif')
-  heartIcon= loadImage('icons/heart.gif')
-  hitSound = loadSound('sounds/hit2.mp3');
-  hurtSound = loadSound('sounds/hurt.mp3');
-  buttonSound = loadSound('sounds/button.mp3');
-  for (let i = 0; i < 10; i++) {  // Adjust the number to match how many sounds you have
-    let soundFile = `sounds/laserSounds/laser_${i}.mp3`;  // Generate the file name dynamically
-    laserSounds.push(loadSound(soundFile));
+  heartIcon = loadImage('icons/heart.gif')
+}
+
+function preloadSounds() {
+  backgroundSound=new Howl({
+    src:['sounds/Background.mp3'],
+    volume:0.3,
+    loop:true
+  });
+  turboSound=new Howl({
+    src:['sounds/powerup.mp3'],
+    volume:0.3
+  });
+  explosionSound=new Howl({
+    src:['sounds/ship_destroy.mp3'],
+    volume:0.3
+  });
+  critSound=new Howl({
+    src:['sounds/crit.mp3'],
+    volume:0.3
+  });
+  fireSound=new Howl({
+    src:['sounds/laser_sound.mp3'],
+    volume:0.3
+  });
+  expSound=new Howl({
+    src:['sounds/exp_pickup.mp3'],
+    volume:0.3
+  });
+  gameOverSound=new Howl({
+    src:['sounds/game_over.mp3'],
+    volume:0.3
+  });
+  healSound=new Howl({
+    src:['sounds/heal.mp3'],
+    volume:0.3
+  });
+  hitSound=new Howl({
+    src:['sounds/hit2.mp3'],
+    volume:0.3
+  });
+  hurtSound=new Howl({
+    src:['sounds/hurt.mp3'],
+    volume:0.3
+  });
+  buttonSound=new Howl({
+    src:['sounds/button.mp3'],
+    volume:0.3
+  });
+  for (let i = 0; i < 10; i++) {
+    let soundFile = `sounds/laserSounds/laser_${i}.mp3`;
+    laserSounds.push(new Howl({
+      src: [soundFile],
+      volume: 0.2
+    }));
   }
 
 }
+
 function playSound(sound) {
-  sound.setVolume(0.05);
-  sound.rate(random(0.8, 1.2));
-  if (soundOn && !sound.isPlaying()) {
+  if (soundOn) {
+    // Set random playback rate
+    sound.rate(random(0.8, 1.2));
+
+    // Set volume
+    sound.volume(0.1);
+
+    // Play the sound
     sound.play();
   }
 }
 
+
 function playLaserSounds() {
-  let randomIndex = Math.floor(random(laserSounds.length));
-  let randomPitch = random(0.9, 1.1);
-  laserSounds[randomIndex].rate(randomPitch);
-  laserSounds[randomIndex].setVolume(0.07);
-  laserSounds[randomIndex].play();
+  if (soundOn) {
+    let randomIndex = Math.floor(Math.random() * laserSounds.length);
+    let laserSound = laserSounds[randomIndex];
+    //laserSound.rate(random(0.9, 1.1));
+    laserSound.play();
+  }
 }
 
 
 function setup() {
-  createCanvas(1500, 800);
+  createCanvas(windowWidth*0.9, windowHeight*0.9);
+  preloadSounds();
   player = new Drone(width / 2, height / 2);  // Example player position
   Xship = new Plane(width/2, height/2)
   cameraPosition = createVector(0, 0);
   frameRate(60);
   toggleSoundButton = new graphicsButton(soundOn ? "Sound: ON" : "Sound: OFF", [255, 255, 0], width / 2, height / 2 + 200, 40);
-  backgroundSound.setVolume(0.1);  // Adjust volume
-  backgroundSound.loop();  // Loop the background sound
+  backgroundSound.play();  // Loop the background sound
 }
 
+function windowResized() {
+  resizeCanvas(windowWidth * 0.9, windowHeight * 0.9);
+}
 
 function draw() {
   background(0);
@@ -149,7 +204,6 @@ function draw() {
               currentExp += exps[i].value;
               score += exps[i].value;
               exps.splice(i, 1);
-              expSound.setVolume(0.1);
               expSound.play();
             }
           }
@@ -167,7 +221,6 @@ function draw() {
             if (dist(player.position.x, player.position.y, healths[i].position.x, healths[i].position.y) < player.getexpRadius) {
               if (player.stats.health < Drone.MAX_HEALTH) {
                 player.stats.health += healths[i].value;
-                healSound.setVolume(0.1);
                 healSound.play();
                 healths.splice(i, 1);
               }
@@ -194,13 +247,14 @@ function draw() {
           if (dist(player.position.x, player.position.y, enemies[i].position.x, enemies[i].position.y) < 15) {
             player.stats.health -= 10;
             addEffect(player.position.x, player.position.y, "💥", "-10", 80, [255, 0, 0]);
-            hurtSound.setVolume(0.5);
             hurtSound.play();
             enemies.splice(i, 1);
             if (player.stats.health <= 0) {
               // Change game state to gameOver
               gameState = 'gameOver';
+              gameOverSound.play();
               tryAgainBtn = new graphicsButton("Try Again", [0, 255, 0], width / 2, height / 2 + 100, 50);
+
             }
           }
         }
@@ -227,17 +281,7 @@ function draw() {
 
       case 'gameOver':
         // Show Game Over screen and Try Again button
-        fill(255);
-        textAlign(CENTER, CENTER);
-        textSize(32);
-        background(0, 150);
-        text("Game Over", width / 2, height / 2 - 50);
-        text(`Final Score: ${score}`, width / 2, height / 2);
-
-        backgroundSound.stop();
-
-        // Display the Try Again button
-        tryAgainBtn.show();
+        drawGameOverScreen();
         break;
 
       case 'levelUp':
@@ -248,8 +292,10 @@ function draw() {
 
   // Handle Try Again button click when the game is over
   if (gameState === 'gameOver' && tryAgainBtn.isButtonClicked()) {
-    backgroundSound.setVolume(0.1);
-    backgroundSound.loop();
+    //backgroundSound.volume(0.1);
+    if(soundOn){
+      backgroundSound.play();
+    }
     resetGame();  // Reset the game when the button is clicked
   }
 }
@@ -257,67 +303,7 @@ function getExpAmount() {
   return Math.round(20 + (level - 1) * 1.01);
 }
 // Function to show paused state and controls
-function drawPausedState() {
-  fill(255);
-  textAlign(CENTER, CENTER);
-  textSize(32);
-  background(0, 150);  // Semi-transparent background for the pause menu
-  text("Game Paused", width / 2, height / 2 - 150);
 
-  resumeButton = new graphicsButton("Resume", [0, 255, 0], width / 2 - 200, height / 2 + 150, 40);
-  resumeButton.show();
-  restartButton = new graphicsButton("Restart", [128, 50, 50], width / 2 + 200, height / 2 + 150, 40);
-  restartButton.show();
-  backToStartMenuButton = new graphicsButton("Back to Start Menu", [255, 255, 0], width / 2, height / 2 + 150, 40);
-  backToStartMenuButton.show();
-
-  // Update text for the toggle sound button
-  toggleSoundButton.text = soundOn ? "Sound: ON" : "Sound: OFF";
-  toggleSoundButton.x = width / 2
-  toggleSoundButton.y= height / 2 + 200
-  toggleSoundButton.show();
-
-  // Handle button clicks
-  if (resumeButton.isButtonClicked()) {
-    gameState = 'playing';
-    loop();  // Restart the game loop
-  }
-
-  if (restartButton.isButtonClicked()) {
-    gameState = 'playing';
-    resetGame();
-  }
-
-  if (backToStartMenuButton.isButtonClicked()) {
-    gameState = 'startMenu';  // Set a specific state for the start menu
-    resetGame();
-    gameStarted = false;
-  }
-
-  // Toggle sound on/off when the toggle button is clicked
-  if (toggleSoundButton.isButtonClicked()) {
-    soundOn = !soundOn;
-    if (soundOn) {
-      backgroundSound.setVolume(0.1);  // Restore sound volume
-      backgroundSound.loop();
-    } else {
-      backgroundSound.setVolume(0);  // Mute the background sound
-      backgroundSound.stop();
-    }
-  }
-
-  // Display controls
-  textSize(18);
-  textAlign(CENTER, CENTER);
-  text("Controls:", width / 2, height / 2 - 120);
-  text("W / Arrow Up - Move Up", width / 2, height / 2 - 90);
-  text("S / Arrow Down - Move Down", width / 2, height / 2 - 60);
-  text("A / Arrow Left - Move Left", width / 2, height / 2 - 30);
-  text("D / Arrow Right - Move Right", width / 2, height / 2);
-  text("Space - Activate Turbo", width / 2, height / 2 + 30);
-  text("P / ESC - Pause/Unpause", width / 2, height / 2 + 60);
-  text("Click 'Resume' button to resume", width / 2, height / 2 + 90);
-}
 
 
 
@@ -339,6 +325,7 @@ function resetGame() {
   spawnInterval = 120;
   Enemy.MAX_HEALTH = 50;
   allowedNumofUpgrades = 3;
+  backgroundSound.seek(0)
   loop();  // Restart the game loop
 }
 function addEffect(x, y, emoji, text = "", size = 40, color = [255, 255, 0], lifespan = 60) {
@@ -396,4 +383,7 @@ function drawEffects(playerX, playerY) {
   for (let effect of effects) {
     effect.draw(playerX, playerY);
   }
+}
+function inScreenBounds(x, y) {
+  return x > 0 && x < width && y > 0 && y < height;
 }

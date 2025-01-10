@@ -1,7 +1,7 @@
 function drawUI() {
     // Apply custom font
     textFont('Russo One');
-
+    let size = width*0.02
     // Reset transformations to screen coordinates
     const statNames = [
         { label: "Level", value: level+"" },
@@ -14,47 +14,61 @@ function drawUI() {
         { label: "Crit Chance", value: (player.stats.critChance * 100).toFixed(2) + "%" },
         { label: "Crit Damage", value: (player.stats.critDamage * 100).toFixed(2) + "%" },
         { label: "Collection Radius", value: player.stats.collectionRadius },
-        { label: "Turbo Charge Rate", value: player.turboChargeRate.toFixed(2) },
+        // { label: "Turbo Charge Rate", value: player.turboChargeRate.toFixed(2) },
         { label: "Turbo Charge Time", value: (player.baseStats.turboChargeMaxTime / 1000).toFixed(2) + "s" },
         { label: "Turbo Duration", value: (player.baseStats.turboDuration / 1000).toFixed(2) + "s" }
     ];
+
     resetMatrix();
     push();
     strokeWeight(5);
     stroke(220);
     fill(51, 100);
-    rect(0, 0, 220, statNames.length * 20 + 60, 20);
+    rect(0, 0, 350, (statNames.length * (size + 1)) + size, 20);
     pop();
+    let barWidth = width / 2.5;
+    let barHeight = 20;
 
+    textSize(size);
     // Draw EXP bar
     fill(255);
-    rect(10, 10, 200, 10);
-    fill(0, 255, 0);
-    rect(10, 10, map(currentExp, 0, expNeeded, 0, 200), 10);
+    rect(width / 2 - barWidth/2, 10, barWidth, barHeight, 10);
+    fill(54, 200, 78);
+    rect(width / 2 - barWidth / 2, 10, map(currentExp, 0, expNeeded, 0, barWidth), barHeight, 10);
+    textAlign(CENTER, CENTER);
+    fill(255);
+    text(`Level ${level}`, width / 2, 50);
+    text(`EXP: ${currentExp}/${expNeeded}`, width / 2, 80);
 
     // Draw health bar
-    fill(255);
-    rect(10, 30, 200, 10);
-    fill(255, 0, 0);
-    rect(10, 30, map(player.stats.health, 0, Drone.MAX_HEALTH, 0, 200), 10);
+    // fill(255);
+    // rect(10, 30, 200, 10);
+    // fill(255, 0, 0);
+    // rect(10, 30, map(player.stats.health, 0, Drone.MAX_HEALTH, 0, 200), 10);
 
     // Draw stats
     fill(255);
-    textSize(12);
+    textSize(24);
     textAlign(LEFT);
-
-    let yPosition = 60;
-    for (let stat of statNames) {
+    fill(0,255,50)
+    text("Stats :", 10, 20);
+    colorMode(HSB);
+    let yPosition = size+20;
+    for (let i=0; i<statNames.length; i++) {
         // Format numbers to 3 decimal places if necessary
-        let value = typeof stat.value === "number" ? stat.value.toFixed(2) : stat.value;
-
-        text(`${stat.label}: ${value}`, 10, yPosition);
-        yPosition += 20; // Move down for the next stat
+        let value = typeof statNames[i].value === "number" ? statNames[i].value.toFixed(2) : statNames[i].value;
+        let h = map(i, 0, statNames.length, 0, 360);
+        fill(h, 100, 100);
+        stroke((h+180)%360, 100, 100);
+        text(`${statNames[i].label}: ${value}`, 10, yPosition);
+        yPosition += size; // Move down for the next stat
     }
+    colorMode(RGB);
 
     // Draw score on the top right of the screen
     fill(255);
-    textSize(20);
+    stroke(0);
+    textSize(size);
     textAlign(RIGHT);
     text(`Score: ${score}`, width - 10, 20);
 }
@@ -93,7 +107,11 @@ function drawUpgradeMenu() {
                 player.addBaseStat("damage", randomValue);
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Damage: ${oldValue} -> ${player.stats.damage}`);
-                addEffect(player.position.x, player.position.y, "⚡", `+Damage: ${player.stats.damage}`, 40, [255, 182, 193]);
+                if (player.isTurboActive) {
+                    addEffect(player.position.x, player.position.y, "⚡", `+Damage: ${player.stats.damage / 2}`, 60, [255, 182, 193]);
+                } else {
+                    addEffect(player.position.x, player.position.y, "⚡", `+Damage: ${player.stats.damage}`, 60, [255, 182, 193]);
+                }
             }
         },
         {
@@ -108,7 +126,11 @@ function drawUpgradeMenu() {
                 player.addBaseStat("bps", randomValue);
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Fire Rate: ${oldValue} -> ${player.stats.bps}`);
-                addEffect(player.position.x, player.position.y, "🔥", `+Fire Rate: ${player.stats.bps}`, 40, [173, 216, 230], 240);
+                if (player.isTurboActive) {
+                    addEffect(player.position.x, player.position.y, "🔥", `+Fire Rate: ${player.stats.bps / 2}`, 60, [173, 216, 230])
+                } else {
+                    addEffect(player.position.x, player.position.y, "🔥", `+Fire Rate: ${player.stats.bps}`, 60, [173, 216, 230], 240);
+                }
             }
         },
         {
@@ -123,7 +145,11 @@ function drawUpgradeMenu() {
                 player.addBaseStat("critDamage", randomValue);
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Crit Damage: ${oldValue} -> ${player.stats.critDamage}`);
-                addEffect(player.position.x, player.position.y, "💥", `+Crit Damage: ${player.stats.critDamage}`, 40, [255, 239, 128], 240);
+                if (player.isTurboActive) {
+                    addEffect(player.position.x, player.position.y, "💥", `+Crit Damage: ${player.stats.critDamage / 2}`, 60, [255, 239, 128]);
+                } else {
+                    addEffect(player.position.x, player.position.y, "💥", `+Crit Damage: ${player.stats.critDamage}`, 60, [255, 239, 128], 240);
+                }
             }
         },
         {
@@ -136,7 +162,11 @@ function drawUpgradeMenu() {
                 if (player.stats.critChance > 1) player.stats.critChance = 1; // Ensure crit chance doesn't exceed 100%
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Crit Chance: ${oldValue} -> ${player.stats.critChance}`);
-                addEffect(player.position.x, player.position.y, "🎯", `+Crit Chance: ${player.stats.critChance}`, 40, [144, 238, 144], 240);
+                if (player.isTurboActive) {
+                    addEffect(player.position.x, player.position.y, "🎯", `+Crit Chance: ${player.stats.critChance / 2}`, 60, [144, 238, 144]);
+                } else {
+                    addEffect(player.position.x, player.position.y, "🎯", `+Crit Chance: ${player.stats.critChance}`, 60, [144, 238, 144], 240);
+                }
             }
         },
         {
@@ -152,7 +182,11 @@ function drawUpgradeMenu() {
                 
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Speed: ${oldValue} -> ${player.stats.speed}`);
-                addEffect(player.position.x, player.position.y, "🏎️", `+Speed: ${player.stats.speed}`, 40, [255, 204, 153], 240);
+                if (player.isTurboActive) {
+                    addEffect(player.position.x, player.position.y, "🏎️", `+Speed: ${player.stats.speed / 2}`, 60, [255, 204, 153]);
+                } else {
+                    addEffect(player.position.x, player.position.y, "🏎️", `+Speed: ${player.stats.speed}`, 60, [255, 204, 153], 240);
+                }
             }
         },
         {
@@ -165,7 +199,7 @@ function drawUpgradeMenu() {
                 player.addBaseStat("health", randomValue);
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Health: ${oldValue} -> ${player.stats.health}`);
-                addEffect(player.position.x, player.position.y, "❤️", `+HP: ${player.stats.health}`, 40, [204, 255, 255], 240);
+                addEffect(player.position.x, player.position.y, "❤️", `+HP: ${player.stats.health}`, 60, [204, 255, 255], 240);
             }
         },
         {
@@ -177,7 +211,7 @@ function drawUpgradeMenu() {
                 player.addBaseStat("collectionRadius", Math.round(randomValue));
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Collection Radius: ${oldValue} -> ${player.stats.collectionRadius}`);
-                addEffect(player.position.x, player.position.y, "📡", `+Collection Radius: ${player.stats.collectionRadius}`, 40, [216, 191, 216], 240);
+                addEffect(player.position.x, player.position.y, "📡", `+Collection Radius: ${player.stats.collectionRadius}`, 60, [216, 191, 216], 240);
             }
         },
         {
@@ -185,11 +219,12 @@ function drawUpgradeMenu() {
             color: [255, 182, 193],
             action: () => {
                 let oldValue = player.baseStats.turboDuration;
-                const randomValue = getExponentialRandom(500, 1000); // Weighted random value between 50 and 200
+                const scaleFactor = oldValue * 0.05; // Use a fraction of the current value for scaling
+                const randomValue = getExponentialRandom(scaleFactor, scaleFactor * 2); // Use current value for scaling
                 player.addBaseStat("turboDuration", randomValue);
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Upgraded Turbo Duration: ${oldValue} -> ${player.baseStats.turboDuration}`);
-                addEffect(player.position.x, player.position.y, "🚀", `+Turbo Duration: ${player.baseStats.turboDuration}`, 40, [255, 182, 193], 240);
+                addEffect(player.position.x, player.position.y, "🚀", `+Turbo Duration: ${player.baseStats.turboDuration}`, 60, [255, 182, 193], 240);
             }
         },
         {
@@ -197,11 +232,12 @@ function drawUpgradeMenu() {
             color: [204, 204, 255],
             action: () => {
                 let oldValue = player.baseStats.turboChargeMaxTime;
-                const randomValue = getExponentialRandom(50, 200); // Weighted random value between 50 and 200 for decreasing time
-                player.addBaseStat("turboChargeMaxTime", -randomValue);
+                const scaleFactor = oldValue * 0.05; // Use a fraction of the current value for scaling
+                const randomValue = getExponentialRandom(scaleFactor, scaleFactor * 2); // Scale the decrement based on current time
+                player.addBaseStat("turboChargeMaxTime", -randomValue); // Decrease charge time
                 console.log(`Upgrade Amount: ${randomValue}`);
                 console.log(`Decreased Turbo Charge Time: ${oldValue} -> ${player.baseStats.turboChargeMaxTime}`);
-                addEffect(player.position.x, player.position.y, "⏱️", `-Turbo Charge Time: ${player.baseStats.turboChargeMaxTime}`, 40, [204, 204, 255], 240);
+                addEffect(player.position.x, player.position.y, "⏱️", `-Turbo Charge Time: ${player.baseStats.turboChargeMaxTime}`, 60, [204, 204, 255], 240);
             }
         }
     ];
@@ -234,6 +270,7 @@ function drawUpgradeMenu() {
 
         }
     }
+    
 
     // Apply the selected upgrade
     if (upgradeOption) {
@@ -245,12 +282,12 @@ function drawUpgradeMenu() {
                 console.log("Bonus upgrade applied!");
                 addEffect(
                     player.position.x,
-                    player.position.y,
+                    player.position.y-100,
                     "🌟",    // Emoji
                     "2X BONUS UPGRADED", // Text
-                    60,      // Size
+                    72,      // Size
                     [255, 255, 0], // Color
-                    240      // Lifespan in frames
+                    120     // Lifespan in frames
                 );
             }
 
@@ -261,8 +298,78 @@ function drawUpgradeMenu() {
         }
     }
 }
+function drawPausedState() {
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(32);
+    background(0, 150);  // Semi-transparent background for the pause menu
+    text("Game Paused", width / 2, height / 2 - 150);
 
+    resumeButton = new graphicsButton("Resume", [0, 255, 0], width / 2 - 200, height / 2 + 150, 40);
+    resumeButton.show();
+    restartButton = new graphicsButton("Restart", [128, 50, 50], width / 2 + 200, height / 2 + 150, 40);
+    restartButton.show();
+    backToStartMenuButton = new graphicsButton("Back to Start Menu", [255, 255, 0], width / 2, height / 2 + 150, 40);
+    backToStartMenuButton.show();
 
+    // Update text for the toggle sound button
+    toggleSoundButton.text = soundOn ? "Sound: ON" : "Sound: OFF";
+    toggleSoundButton.x = width / 2
+    toggleSoundButton.y = height / 2 + 200
+    toggleSoundButton.h = 40
+    toggleSoundButton.show();
+
+    // Handle button clicks
+    if (resumeButton.isButtonClicked()) {
+        gameState = 'playing';
+        loop();  // Restart the game loop
+    }
+
+    if (restartButton.isButtonClicked()) {
+        gameState = 'playing';
+        resetGame();
+    }
+
+    if (backToStartMenuButton.isButtonClicked()) {
+        gameState = 'startMenu';  // Set a specific state for the start menu
+        resetGame();
+        gameStarted = false;
+    }
+
+    // Toggle sound on/off when the toggle button is clicked
+    if (toggleSoundButton.isButtonClicked()) {
+        soundOn = !soundOn;
+        if (soundOn) {
+            backgroundSound.play();
+        } else {
+            backgroundSound.pause();
+        }
+    }
+
+    // Display controls
+    textSize(18);
+    textAlign(CENTER, CENTER);
+    text("Controls:", width / 2, height / 2 - 120);
+    text("W / Arrow Up - Move Up", width / 2, height / 2 - 90);
+    text("S / Arrow Down - Move Down", width / 2, height / 2 - 60);
+    text("A / Arrow Left - Move Left", width / 2, height / 2 - 30);
+    text("D / Arrow Right - Move Right", width / 2, height / 2);
+    text("Space - Activate Turbo", width / 2, height / 2 + 30);
+    text("P / ESC - Pause/Unpause", width / 2, height / 2 + 60);
+    text("Click 'Resume' button to resume", width / 2, height / 2 + 90);
+}
+function drawGameOverScreen() {
+    fill(255);
+    textAlign(CENTER, CENTER);
+    textSize(32);
+    background(0, 150);
+    text("Game Over", width / 2, height / 2 - 50);
+    text(`Final Score: ${score}`, width / 2, height / 2);
+
+    backgroundSound.stop();
+    // Display the Try Again button
+    tryAgainBtn.show();
+}
 // Helper function to shuffle an array
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -328,7 +435,6 @@ class graphicsButton {
             this.triggered = true;  // Mark the button as triggered
             this.lastClickTime = millis();  // Update the last click time
             console.log(`Button clicked: ${this.text}`);
-            buttonSound.setVolume(0.3);
             buttonSound.play();
             return true;
         }
@@ -396,16 +502,17 @@ function drawStartMenu() {
     Xship.update();
     Xship.show();
     fill(255);
-    textSize(30);
+    textSize(64);
     textAlign(CENTER);
     let title = "Void Vanguards 🚀";
-    text(title, width / 2, height / 2 - 200);
+    text(title, width / 2, height / 2 - height*0.35);
     // Create buttons
-    let startBtn = new graphicsButton("Play", [0, 255, 0], width / 2,( height / 2 )- 100, 50);
-    let rulesBtn = new graphicsButton("Rules", [255, 255, 0], width / 2, (height / 2 )- 25, 50);
-    let codeBtn = new graphicsButton("Code", [255, 0, 255], width / 2, (height / 2)+50 , 50);
+    let startBtn = new graphicsButton("Play", [0, 255, 0], width / 2, (height / 2) - height * 0.2,75);
+    let rulesBtn = new graphicsButton("Rules", [255, 255, 0], width / 2, (height / 2)-height * 0.05, 75);
+    let codeBtn = new graphicsButton("Code", [255, 0, 255], width / 2, (height / 2) + height * 0.1 , 75);
     toggleSoundButton.x = width / 2
-    toggleSoundButton.y = (height / 2) +75+50
+    toggleSoundButton.y = (height / 2) + height * 0.25
+    toggleSoundButton.h = 75
     toggleSoundButton.show();
     // Show buttons
     startBtn.show();
@@ -420,10 +527,10 @@ function drawStartMenu() {
     if (toggleSoundButton.isButtonClicked()) {
         soundOn = !soundOn;
         if (soundOn) {
-            backgroundSound.setVolume(0.1);  // Restore sound volume
-            backgroundSound.loop();
+            //backgroundSound.setVolume(0.1);  // Restore sound volume
+            backgroundSound.play();
         } else {
-            backgroundSound.setVolume(0);  // Mute the background sound
+            //backgroundSound.setVolume(0);  // Mute the background sound
             backgroundSound.stop();
         }
     }
@@ -440,7 +547,7 @@ function drawStartMenu() {
     }
     if (codeBtn.isButtonClicked()) {
         // Show code link (modify to your repository or any code source)
-        window.open("https://github.com/Lazy-Coder-03/Shapelike", "_blank");
+        window.open("https://github.com/Lazy-Coder-03/Void-Vanguards", "_blank");
     }
 }
 

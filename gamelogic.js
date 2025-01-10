@@ -6,11 +6,12 @@ function levelUp() {
     gameState = 'levelUp'; 
     if (level % 10 === 0) {
         allowedNumofUpgrades++;
+        //Enemy.levelUp();;
         enemyLevelUp();
     }
 
     if (random(1) < enemyLevelUpChance * (level-1) * 2) {
-        enemyLevelUp();
+       enemyLevelUp();;
     }
     if (spawnInterval >= 60) {
         spawnInterval -= 2;
@@ -27,6 +28,7 @@ function enemyLevelUp() {
         [255, 255, 0], // Color
         60 * 5     // Lifespan in frames
     );
+    Enemy.level=Enemy.level+1;
 }
 
 function keyPressed() {
@@ -55,7 +57,7 @@ function keyIsDownHandler() {
 
 function spawnEnemies() {
     // Random angle to determine spawn direction
-    if (enemies.length > 20){
+    if (enemies.length > 30){
         return
     }
     let angle = random(TWO_PI);
@@ -68,7 +70,7 @@ function spawnEnemies() {
     let y = sin(angle) * radius + player.position.y;
     // Create and add the enemy at the calculated position
     if (random(1) < enemyLevelUpChance) {
-        enemyLevelUp();
+       enemyLevelUp();
     }
     enemies.push(new Enemy(x, y));
 }

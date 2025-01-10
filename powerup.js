@@ -5,7 +5,7 @@ class Exp {
         this.acceleration = createVector(0, 0);
         this.maxSpeed = 10;
         this.maxForce = 1;
-        this.lifespan = 1200;
+        this.lifespan = xpOrbLifeSpan;
         this.value = val
     }
 
@@ -35,7 +35,7 @@ class Exp {
         translate(this.position.x, this.position.y);
 
         // Smooth transition for size
-        let size = map(this.lifespan, 0, 1200, 10, 48);  // Start from a minimum size (e.g., 10) instead of 0
+        let size = map(this.lifespan, 0, xpOrbLifeSpan, 10, 48);  // Start from a minimum size (e.g., 10) instead of 0
         let imgWid = orbIcon.width;
         let imgHei = orbIcon.height;
         let aspectRatio = imgWid / imgHei;
@@ -58,7 +58,7 @@ class Health {
         this.acceleration = createVector(0, 0);
         this.maxSpeed = 10;
         this.maxForce = 1;
-        this.lifespan = 1200;
+        this.lifespan = healthOrbLifeSpan;
         this.value = val
     }
 
@@ -84,7 +84,7 @@ class Health {
         translate(this.position.x, this.position.y);
 
         // Smooth transition for size
-        let size = map(this.lifespan, 0, 1200, 10, 48);  // Start from a minimum size (e.g., 10) instead of 0
+        let size = map(this.lifespan, 0, healthOrbLifeSpan, 10, 48);  // Start from a minimum size (e.g., 10) instead of 0
         let imgWid = heartIcon.width;
         let imgHei = heartIcon.height;
         let aspectRatio = imgWid / imgHei;

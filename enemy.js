@@ -1,5 +1,6 @@
 class Enemy {
     static MAX_HEALTH = 50;
+    static level = 1;
     constructor(x, y) {
         this.position = createVector(x, y);
         this.velocity = createVector(0, 0);
@@ -10,12 +11,30 @@ class Enemy {
         this.health = Enemy.MAX_HEALTH;
         this.displayedHealth = this.health; // Smooth transition for visual size
         this.healthBarWidth = 50; // Width of health bar
+        this.level= Enemy.level;
     }
 
     takeDamage(amount) {
         this.health -= amount;
         if (this.health < 0) this.health = 0; // Prevent health from going below 0
     }
+
+    // levelUp() {
+    //     this.level += 1; // Increase this enemy's level
+    //     this.maxHealth += Math.round((20 + this.maxHealth * 0.1) / 10) * 10; // Increase health
+    //     this.health = this.maxHealth; // Reset health to maxHealth
+
+    //     addEffect(
+    //         player.position.x,
+    //         player.position.y - 100,
+    //         "⚠️", // Emoji
+    //         "ENEMIES LEVELED UP!", // Text
+    //         100, // Size
+    //         [255, 255, 0], // Color
+    //         60 * 2 // Lifespan in frames
+    //     );
+    // }
+
 
     dropExp(amt) {
         return new Exp(this.position.x, this.position.y, amt);
@@ -66,10 +85,15 @@ class Enemy {
             map(this.health, 0, this.maxHealth, 0, this.healthBarWidth),
             5
         );
+        // Display health text
         textSize(10);
         fill(255);
         textAlign(CENTER, CENTER);
         text(`${Math.round(this.health)}/${this.maxHealth}`, this.position.x, this.position.y - 35);
+        // Display level text
+        text(`Lvl ${this.level}`, this.position.x, this.position.y - 45);
+
+
         pop();
     }
 }

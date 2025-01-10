@@ -3,14 +3,14 @@ class Drone {
         health: 40,
         speed: 2,
         force: 0.1,
-        bps: 2,
-        rotationSpeed: 0.1,
         damage: 40,
+        bps: 2,
+        rotationSpeed: 0.08,
         critChance: 0.05,
         critDamage: 2,
-        collectionRadius: 100, // Radius for collecting EXP orbs
-        turboChargeMaxTime: 10000, // Max time for filling the turbo charge bar
-        turboDuration: 5000 // How long turbo lasts (as a stat)
+        collectionRadius: 150, // Radius for collecting EXP orbs
+        turboChargeMaxTime: 30000, // Max time for filling the turbo charge bar
+        turboDuration: 6000 // How long turbo lasts (as a stat)
     };
     static MAX_HEALTH = 40;
 
@@ -18,7 +18,7 @@ class Drone {
         this.position = createVector(x, y);
         this.velocity = createVector(0, 0);
         this.acceleration = createVector(0, 0);
-
+        this.size = 64;
         this.baseStats = { ...Drone.DEFAULT_STATS };
         this.stats = { ...Drone.DEFAULT_STATS };
 
@@ -27,7 +27,7 @@ class Drone {
         this.friction = 0.07;
         this.lastShotTime = 0;
         this.getexpRadius = 20;
-        this.perceptionRadius = 400;
+        this.perceptionRadius = 1000;
         this.minSpeedRequired = 0.3;
         // Turbo Charge
         this.turboChargeTime = 0; // Time drone has stayed still
@@ -35,20 +35,35 @@ class Drone {
         this.turboEndTime = 0; // When turbo mode ends
         this.turboChargeRate = 0;
         this.passiveActive = false;
+        this.passiveEffectAdded = false;
+        this.passiveRequirements = 5; // Number of enemies required to activate passive mode
     }
 
     update() {
         keyIsDownHandler();
         this.stats.health = constrain(this.stats.health, 0, Drone.MAX_HEALTH);
-        if (enemies.length > 5) {
-            this.turboChargeRate = deltaTime * Math.round(enemies.length/2);
+        if (enemies.length > this.passiveRequirements) {
+            this.turboChargeRate = deltaTime * Math.round(enemies.length / this.passiveRequirements);
         } else {
             this.turboChargeRate = deltaTime;
         }
         if (this.turboChargeRate > deltaTime) {
             this.passiveActive = true;
-        } else {
-            this.passiveActive = false;
+            if (!this.passiveEffectAdded) {
+                // addEffect(
+                //     this.position.x,
+                //     this.position.y - 80,
+                //     "🚀",    // Emoji
+                //     "PASSIVE IS ACTIVE!", // Text
+                //     100,      // Size
+                //     [0, 255, 0], // Color
+                //     120      // Lifespan in frames
+                // );
+                // this.passiveEffectAdded = true;
+            } else {
+                this.passiveActive = false;
+                //this.passiveEffectAdded = false;
+            }
         }
         if (this.velocity.mag() < this.minSpeedRequired && millis() - this.lastShotTime > 1000 / this.stats.bps) {
             this.shootBullet();
@@ -91,7 +106,7 @@ class Drone {
         let deltaAngle = this.targetRotation - this.rotation;
         if (deltaAngle > PI) deltaAngle -= TWO_PI;
         if (deltaAngle < -PI) deltaAngle += TWO_PI;
-        this.rotation += constrain(deltaAngle, -this.stats.rotationSpeed, this.stats.rotationSpeed);
+        this.rotation += constrain(deltaAngle, -this.stats.rotationSpeed , this.stats.rotationSpeed );
     }
     isTurboReady() {
         return this.turboChargeTime >= this.baseStats.turboChargeMaxTime;
@@ -114,11 +129,15 @@ class Drone {
         let closest = null;
         let closestDist = Infinity;
         for (let enemy of enemies) {
+             
             let d = this.position.dist(enemy.position);
             if (d < this.perceptionRadius && d < closestDist) {
+                // if (inScreenBounds(enemy.position.x, enemy.position.y)) {
                 closestDist = d;
                 closest = enemy;
+                // }
             }
+            
         }
         return closest;
     }
@@ -133,40 +152,50 @@ class Drone {
     show() {
         push();
         translate(this.position.x, this.position.y);
+        this.drawCloudyBoundary();
         rotate(this.rotation + PI / 2);
-
-        // Draw the main drone
-        fill(15, 148, 36);
-        noStroke();
-        beginShape();
-        vertex(10, 10);
-        vertex(-10, 10);
-        vertex(0, -20);
-        endShape(CLOSE);
-        //draw the icon of the drone saved in spaceShipIcon png
-        image(spaceShipIcon, -20, -20, 40, 40);
-
-        // Draw turbo charge arc if turbo is active
-        if (this.isTurboActive) {
-            stroke(0, 255, 255);
-            strokeWeight(6);
-            noFill();
-            // Calculate angle based on remaining turbo time
-            let remainingTime = this.turboEndTime - millis(); // Time left for turbo
-            let angle = map(remainingTime, 0, this.baseStats.turboDuration, 0, TWO_PI);
-            arc(0, 0, 60, 60, -HALF_PI, -HALF_PI + angle);  // Draw the arc from the top (starting at -HALF_PI)
+        
+        // Draw the drone itself
+        if (!spaceShipIcon) {
+            fill(15, 148, 36);
+            noStroke();
+            beginShape();
+            vertex(10, 10);
+            vertex(-10, 10);
+            vertex(0, -20);
+            endShape(CLOSE);
+        } else {
+            image(spaceShipIcon, -this.size / 2, -this.size / 2, this.size, this.size);
         }
 
-        stroke(127, 78, 56)
-        strokeWeight(2);
-        noFill();
-        ellipse(0, 0, this.stats.collectionRadius * 2, this.stats.collectionRadius * 2);
+        // Draw the animated cloudy boundary
+        
 
         pop();
-        // Draw Turbo Charge bar
-        this.drawTurboChargeBar();
+
+        // Draw other UI elements like hearts and turbo charge bar
+        this.drawTurboArc();
         this.drawHearts();
     }
+
+    drawCloudyBoundary() {
+        let numCircles = 10; // Number of circles to create the cloudy effect
+        let maxRadius = this.stats.collectionRadius; // Maximum radius of the collection zone
+        push();
+        for (let i = 0; i < numCircles; i++) {
+            let radius = map(i, 0, numCircles - 1, 0, maxRadius);
+            let animRad1 = radius + sin(frameCount / 10) * 10;
+            let animRad2 = radius + cos(frameCount / 10) * 10;
+            let alpha = 10
+            fill(255, 255, 255, alpha);
+            noStroke();
+            ellipse(0, 0, animRad1 * 2, animRad2 * 2);
+        }
+        
+        pop();
+    }
+
+
 
 
     drawHearts() {
@@ -176,16 +205,16 @@ class Drone {
         translate(this.position.x, this.position.y);
         // Draw hearts
         for (let i = 0; i < totalHearts; i++) {
-            let s = 40 / totalHearts
+            let s = this.size / totalHearts
             textSize(s);
             //textAlign(CENTER, CENTER);
 
             if (i < fullHearts) {
                 fill(255, 0, 0);  // Filled heart (red)
-                text("❤️", (i - (totalHearts / 2) + 1) * (s + 2), -20);  // Center the hearts
+                text("❤️", (i - (totalHearts / 2) + 1) * (s + 2), -this.size);  // Center the hearts
             } else {
                 fill(150);  // Empty heart (gray)
-                text("🖤", (i - (totalHearts / 2) + 1) * (s + 2), -20);  // Center the empty hearts
+                text("🖤", (i - (totalHearts / 2) + 1) * (s + 2), -this.size);  // Center the empty hearts
             }
         }
         pop();
@@ -193,9 +222,8 @@ class Drone {
 
     activateTurboCharge() {
         this.isTurboActive = true;
-        turboSound.setVolume(0.3);
         // turboSound.rate(random(0.8, 1.2));
-        if (!turboSound.isPlaying()) {
+        if (!turboSound.playing()) {
             turboSound.play(); 
         }
 
@@ -231,7 +259,10 @@ class Drone {
 
     drawTurboChargeBar() {
         push();
-        translate(this.position.x - 25, this.position.y - 40);
+        let barWidth = this.size;
+        let barHeight = 10;
+        //rectMode(CENTER);
+        translate(this.position.x - barWidth / 2, this.position.y - this.size + barHeight/2);
 
         // Add a glow effect when charge is full
         if (this.turboChargeTime >= this.baseStats.turboChargeMaxTime) {
@@ -247,15 +278,54 @@ class Drone {
 
         // Draw the bar background
         fill(50);
-        rect(0, 0, 50, 5);
+        rect(0, 0, barWidth, barHeight,5);
 
         // Draw the progress
         fill(0, 255, 255);
-        let progress = map(this.turboChargeTime, 0, this.baseStats.turboChargeMaxTime, 0, 50);
-        rect(0, 0, progress, 5);
+        let progress = map(this.turboChargeTime, 0, this.baseStats.turboChargeMaxTime, 0, barWidth);
+        rect(0, 0, progress, barHeight,5);
 
         pop();
     }
+    drawTurboArc() {
+        let turboArcRadius = this.size + this.size * 0.5;
+        push();
+        translate(this.position.x, this.position.y);
+        strokeWeight(6);
+        noFill();
+
+        // If turbo is active, draw the arc with a glow effect
+        if (this.isTurboActive) {
+            // Arc for turbo usage
+            stroke(0, 255, 255); // Turbo arc color
+            let remainingTime = this.turboEndTime - millis();
+            let angle = map(remainingTime, 0, this.baseStats.turboDuration, 0, TWO_PI);
+            // Apply glow effect only when turbo is active
+            // drawingContext.shadowColor = color(0, 255, 255);
+            // drawingContext.shadowBlur = 15;
+            arc(0, 0, turboArcRadius, turboArcRadius, -HALF_PI, -HALF_PI + angle);
+        } else {
+            // Arc for charging
+            //stroke(this.passiveActive ? color(0, 255, 0) : color(0, 255, 255));
+            stroke(color(0, 255, 255));
+            let chargeAngle = map(this.turboChargeTime, 0, this.baseStats.turboChargeMaxTime, 0, TWO_PI);
+            arc(0, 0, turboArcRadius, turboArcRadius, -HALF_PI, -HALF_PI + chargeAngle);
+
+            // Apply glow effect when charge is full
+            // if (this.turboChargeTime >= this.baseStats.turboChargeMaxTime) {
+            //     drawingContext.shadowColor = color(0, 255, 255);
+            //     drawingContext.shadowBlur = 15;
+            //    // arc(0, 0, turboArcRadius, turboArcRadius, -HALF_PI, -HALF_PI + angle)
+            // }
+        }
+
+        pop();
+
+        // // Reset shadow effect after drawing
+        // drawingContext.shadowColor = color(0, 0, 0, 0); // Reset shadow color to transparent
+        // drawingContext.shadowBlur = 0; // Reset shadow blur to default
+    }
+
 
 
     addBaseStat(stat, value) {
